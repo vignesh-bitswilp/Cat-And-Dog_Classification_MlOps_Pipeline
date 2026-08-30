@@ -1,0 +1,74 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -m src.data_preprocessing
+    deps:
+    - path: data/raw/cats
+      hash: md5
+      md5: b4f7b99000da5f05caf627330aaa158c.dir
+      size: 848866410
+      nfiles: 24998
+    - path: data/raw/dogs
+      hash: md5
+      md5: e977e9666bdb6935f2faca1a9556a1aa.dir
+      size: 460444220
+      nfiles: 12499
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: 13db060d3894717df52a9f7e5767da65
+      size: 7598
+    outs:
+    - path: data/processed/test
+      hash: md5
+      md5: 2e2bfae69f25573c8097e91c5ea34772.dir
+      size: 9802352
+      nfiles: 300
+    - path: data/processed/train
+      hash: md5
+      md5: 047a73845c9b7b63b6fa9c0ad90f82b9.dir
+      size: 88011563
+      nfiles: 2400
+    - path: data/processed/val
+      hash: md5
+      md5: b31abe94d96de67e0c8a4ddb2d6c4236.dir
+      size: 11165836
+      nfiles: 300
+  train:
+    cmd: python -m src.train --epochs 15 --batch-size 32
+    deps:
+    - path: data/processed/test
+      hash: md5
+      md5: 2e2bfae69f25573c8097e91c5ea34772.dir
+      size: 9802352
+      nfiles: 300
+    - path: data/processed/train
+      hash: md5
+      md5: 047a73845c9b7b63b6fa9c0ad90f82b9.dir
+      size: 88011563
+      nfiles: 2400
+    - path: data/processed/val
+      hash: md5
+      md5: b31abe94d96de67e0c8a4ddb2d6c4236.dir
+      size: 11165836
+      nfiles: 300
+    - path: src/model.py
+      hash: md5
+      md5: 9dbf6d7a97c9801936381af7a6108f72
+      size: 3508
+    - path: src/train.py
+      hash: md5
+      md5: 5593e3eb7a4fc1e05f7706e4bd0e9f82
+      size: 10274
+    outs:
+    - path: models/confusion_matrix.png
+      hash: md5
+      md5: daa11045d2e4df1efc6d38f3d13969fe
+      size: 16786
+    - path: models/loss_curve.png
+      hash: md5
+      md5: c7b9db72a56f1105e9d445367e43e4b7
+      size: 30104
+    - path: models/model.pt
+      hash: md5
+      md5: 5c1db906d4831e8b5ef6f55dff84636c
+      size: 1710810
