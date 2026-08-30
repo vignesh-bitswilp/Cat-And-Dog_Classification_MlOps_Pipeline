@@ -55,6 +55,18 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl rollout status deployment/cats-dogs-inference --timeout=120s
 
+      - name: Debug model and pod
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods
+
+          echo "=== Pod logs ==="
+          kubectl logs deployment/cats-dogs-inference --tail=200
+
+          echo "=== Model check ==="
+          POD=$(kubectl get pods -l app=cats-dogs-inference -o jsonpath='{.items[0].metadata.name}')
+          kubectl exec "$POD" -- ls -lh /app/models/
+
       - name: Port-forward service for smoke testing
         run: |
           kubectl port-forward svc/cats-dogs-inference-svc 8000:80 &
