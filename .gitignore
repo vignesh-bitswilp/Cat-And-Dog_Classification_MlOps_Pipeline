@@ -22,3 +22,17 @@ mlflow.db
 
 # Docker
 *.log
+
+# Kaggle downloaded/extracted source files
+data/raw/_kaggle_download/
+
+# Generated monitoring reports
+monitoring/performance_reports/
+
+# Kaggle credentials
+kaggle.json
+.kaggle/
+
+# Environment/secrets
+.env
+*.env

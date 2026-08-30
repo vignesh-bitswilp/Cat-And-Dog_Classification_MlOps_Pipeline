@@ -1,0 +1,14 @@
+# --- CPU inference ---
+torch==2.11.0
+torchvision==0.26.0
+
+# --- Image processing ---
+pillow==12.1.1
+
+# --- FastAPI inference service ---
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+
+# --- Monitoring ---
+prometheus_client==0.26.0

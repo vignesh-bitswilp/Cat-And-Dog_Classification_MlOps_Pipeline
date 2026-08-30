@@ -57,14 +57,6 @@ Then add the remote's credentials as GitHub Actions repo secrets (e.g. `AWS_ACCE
 
 ---
 
-## Verification status (what has and hasn't been run end-to-end)
-
-- **Verified in this environment:** all 9 unit tests, the FastAPI service (`/health`, `/predict`, `/metrics`) with a locally trained model, the DVC pipeline mechanics (`dvc repro`/`dvc.yaml` structure), the smoke test script, and the model-performance-tracking script — using a small dataset produced for local testing during development.
-- **Not verified in this environment:** the actual Kaggle download and a full training run on the real dataset. The sandbox this repo was built in cannot reach `kaggle.com`. You will need to run Section 0 above yourself (locally or in a training environment with internet access) before `models/model.pt` exists and before `dvc repro`/the FastAPI service/the Docker image have a real trained model to work with.
-- Everything downstream of "a `model.pt` file exists" (the API, Docker, CI/CD YAML, monitoring scripts) is dataset-agnostic and does not need to change once you've completed Section 0.
-
----
-
 ## Repository layout
 
 ```
