@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/cats-dogs-inference
+  IMAGE_NAME: vignesh-bitswilp/cat-and-dog_classification_mlops_pipeline/cats-dogs-inference
   IMAGE_TAG: latest
 
 jobs:
