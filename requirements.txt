@@ -24,3 +24,4 @@ requests==2.33.1
 
 # --- Data/pipeline versioning ---
 dvc==3.67.1
+kaggle==2.2.4

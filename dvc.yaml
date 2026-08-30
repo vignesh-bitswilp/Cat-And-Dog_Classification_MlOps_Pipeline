@@ -1,15 +1,15 @@
 stages:
-  generate_data:
-    cmd: python scripts/generate_synthetic_data.py
-    outs:
-      - data/raw/cats
-      - data/raw/dogs
-    desc: >
-      Generates the synthetic dataset used for reproducible CI runs.
-      Skip this stage (dvc.yaml supports overriding) and instead run
-      `kaggle datasets download -d salader/dogs-vs-cats -p data/raw --unzip`
-      to use the real Kaggle dataset -- see scripts/generate_synthetic_data.py
-      docstring for details.
+  # NOTE: There is deliberately no "download_data" DVC stage here.
+  # Downloading requires per-user Kaggle credentials, so it's a manual
+  # (or CI-secret-gated) one-time step rather than something `dvc repro`
+  # can run unattended for every contributor. Run this once before
+  # `dvc repro`:
+  #
+  #     python scripts/download_kaggle_data.py
+  #     dvc add data/raw/cats data/raw/dogs
+  #
+  # `dvc add` versions the resulting images so `dvc repro` below can treat
+  # data/raw/cats and data/raw/dogs as tracked, hashed dependencies.
 
   preprocess:
     cmd: python -m src.data_preprocessing
@@ -21,10 +21,10 @@ stages:
       - data/processed/train
       - data/processed/val
       - data/processed/test
-    desc: Splits raw images into train/val/test (80/10/10) folders.
+    desc: Splits raw Kaggle images into train/val/test (80/10/10) folders.
 
   train:
-    cmd: python -m src.train --epochs 5 --batch-size 16
+    cmd: python -m src.train --epochs 15 --batch-size 32
     deps:
       - data/processed/train
       - data/processed/val
@@ -38,4 +38,6 @@ stages:
     desc: >
       Trains SimpleCNN and logs the run (params/metrics/artifacts) to
       MLflow. Run `mlflow ui --backend-store-uri sqlite:///mlflow.db`
-      to inspect tracked experiments.
+      to inspect tracked experiments. Epoch count is higher than the
+      earlier synthetic-data default since the real dataset needs more
+      passes to converge -- adjust for your hardware/time budget.

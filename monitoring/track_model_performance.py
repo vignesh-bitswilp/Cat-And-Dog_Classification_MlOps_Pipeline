@@ -3,17 +3,20 @@ monitoring/track_model_performance.py
 --------------------------------------
 Post-deployment model performance tracking (Assignment M5, Task 2).
 
-Simulates/collects a small batch of requests with known true labels,
-sends them to the live inference service, and computes drift-relevant
-metrics (accuracy, per-class breakdown, confusion matrix) so a team can
-track how the deployed model performs on fresh traffic over time.
+Collects a small batch of requests with known true labels and sends them
+to the live inference service, then computes accuracy, a per-class
+report, and a confusion matrix -- so a team can track how the deployed
+model performs on fresh traffic over time and catch drift early.
 
-In a real deployment, `collect_batch()` would be replaced with a query
-against logged production requests + a source of ground truth (e.g.
-labels supplied later by adopters/staff at the pet-adoption platform).
-Here we simulate that batch using freshly generated synthetic images
-with known labels, and call the same synthetic generators used in the
-training pipeline for consistency.
+WHERE THE LABELED BATCH COMES FROM
+------------------------------------
+This script samples real, already-labeled images from the held-out test
+split (data/processed/test/{cats,dogs}), which is a reasonable stand-in
+for "a small batch of real or simulated requests with true labels" per
+the assignment. In a production deployment you would instead:
+  - Sample from logged production requests once ground truth becomes
+    available (e.g. an adopter/staff member confirms the actual species), or
+  - Periodically re-score a fixed, curated labeled holdout set.
 
 Usage:
     python monitoring/track_model_performance.py --url http://localhost:8000 --n 20
@@ -21,8 +24,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import io
 import json
+import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,33 +36,45 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.generate_synthetic_data import make_cat_image, make_dog_image  # noqa: E402
-
+TEST_DIR = ROOT / "data" / "processed" / "test"
 REPORTS_DIR = ROOT / "monitoring" / "performance_reports"
+CLASSES = ["cats", "dogs"]
+LABEL_MAP = {"cats": "cat", "dogs": "dog"}  # folder name -> model output label
 
 
-def collect_batch(n_per_class: int = 10):
-    """Simulate a batch of real/labeled traffic: (image_bytes, true_label)."""
+def collect_batch(n_per_class: int, seed: int = 42):
+    """
+    Sample `n_per_class` real, labeled images per class from the held-out
+    test split. Returns a list of (image_path, true_label) tuples.
+    """
+    if not TEST_DIR.exists():
+        sys.exit(
+            f"Test split not found at {TEST_DIR}. Run the data pipeline first:\n"
+            "  python scripts/download_kaggle_data.py\n"
+            "  dvc add data/raw/cats data/raw/dogs\n"
+            "  python -m src.data_preprocessing"
+        )
+
+    random.seed(seed)
     batch = []
-    for _ in range(n_per_class):
-        buf = io.BytesIO()
-        make_cat_image().save(buf, format="JPEG")
-        batch.append((buf.getvalue(), "cat"))
-
-        buf = io.BytesIO()
-        make_dog_image().save(buf, format="JPEG")
-        batch.append((buf.getvalue(), "dog"))
+    for cls in CLASSES:
+        files = sorted((TEST_DIR / cls).glob("*.jpg"))
+        if not files:
+            sys.exit(f"No test images found under {TEST_DIR / cls}.")
+        sample = random.sample(files, min(n_per_class, len(files)))
+        batch.extend((f, LABEL_MAP[cls]) for f in sample)
     return batch
 
 
 def score_batch(base_url: str, batch):
     y_true, y_pred = [], []
-    for image_bytes, true_label in batch:
-        response = requests.post(
-            f"{base_url}/predict",
-            files={"file": ("sample.jpg", image_bytes, "image/jpeg")},
-            timeout=10,
-        )
+    for image_path, true_label in batch:
+        with open(image_path, "rb") as f:
+            response = requests.post(
+                f"{base_url}/predict",
+                files={"file": (image_path.name, f, "image/jpeg")},
+                timeout=10,
+            )
         response.raise_for_status()
         pred_label = response.json()["label"]
         y_true.append(true_label)
@@ -89,6 +104,7 @@ def main():
         "classification_report": report,
         "confusion_matrix": cm,
         "labels_order": ["cat", "dog"],
+        "source": "held-out test split (data/processed/test)",
     }
 
     out_path = REPORTS_DIR / f"perf_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.json"

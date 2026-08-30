@@ -34,18 +34,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ---- Produce a tiny model artifact so tests/image build have something
-      #      to package. On a real dataset this step is replaced by
-      #      `dvc pull` + `dvc repro` against a full training run. ----
-      - name: Generate synthetic data & train a smoke-test model
-        run: |
-          python scripts/generate_synthetic_data.py
-          python -m src.data_preprocessing
-          MLFLOW_TRACKING_URI="sqlite:///mlflow.db" python -m src.train --epochs 2 --batch-size 16
-
       # ---- Run unit tests (M3.1) ----
+      # These tests don't require the real Kaggle dataset or a trained
+      # model: preprocessing tests use in-memory PIL images, and the
+      # inference-utility tests exercise an untrained model's I/O
+      # plumbing (shapes/schema/determinism), not classification accuracy.
       - name: Run unit tests
         run: pytest tests/ -v
+
+      # ---- Pull the versioned, already-trained model artifact (M1) ----
+      # Training on the full Kaggle dataset is a deliberately separate,
+      # manual/on-demand step (see README "Training the model") rather
+      # than something every push re-runs. CI instead pulls the model
+      # artifact that a prior `dvc repro && dvc push` produced, so the
+      # Docker image below bakes in a real, already-trained model.
+      #
+      # Requires a DVC remote to be configured (see README) and its
+      # credentials added as repo secrets, e.g. for an S3 remote:
+      #   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+      - name: Pull trained model artifact via DVC
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          dvc pull models/model.pt || echo "No DVC remote configured yet -- skipping pull. Configure one before relying on this step (see README)."
 
       # ---- Build Docker image (M3.2) ----
       - name: Set up Docker Buildx
