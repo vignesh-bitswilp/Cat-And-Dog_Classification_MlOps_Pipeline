@@ -33,7 +33,8 @@ HTTP_CODE=$(echo "$HEALTH_RESPONSE" | tail -n1)
 BODY=$(echo "$HEALTH_RESPONSE" | sed '$d')
 
 if [ "$HTTP_CODE" != "200" ]; then
-  echo "FAIL: /health returned HTTP $HTTP_CODE"
+  echo "FAIL: /predict returned HTTP $HTTP_CODE"
+  echo "Response: $BODY"
   exit 1
 fi
 echo "   /health OK: $BODY"
