@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cats-dogs-inference
+  labels:
+    app: cats-dogs-inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cats-dogs-inference
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cats-dogs-inference
+    spec:
+      containers:
+        - name: inference
+          # Replaced by CD pipeline with the freshly-built & pushed image
+          # (see .github/workflows/cd.yml). For local `kubectl apply`,
+          # replace IMAGE_PLACEHOLDER manually, e.g.:
+          #   sed -i 's#IMAGE_PLACEHOLDER#cats-dogs-inference:latest#' k8s/deployment.yaml
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20

@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  inference:
+    image: ${IMAGE_NAME:-cats-dogs-inference}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cats-dogs-inference
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Prometheus for scraping /metrics (M5 monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cats-dogs-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - inference

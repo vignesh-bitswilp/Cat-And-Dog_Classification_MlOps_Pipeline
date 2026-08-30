@@ -1,0 +1,26 @@
+# --- Core ML ---
+torch==2.13.0
+torchvision==0.28.0
+numpy==2.4.4
+scikit-learn==1.8.0
+pillow==12.1.1
+matplotlib==3.10.8
+
+# --- Experiment tracking ---
+mlflow==3.15.2
+
+# --- Inference service ---
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+prometheus_client==0.26.0
+
+# --- Testing ---
+pytest==9.1.1
+httpx==0.28.1
+
+# --- Monitoring (post-deploy performance tracking script) ---
+requests==2.33.1
+
+# --- Data/pipeline versioning ---
+dvc==3.67.1

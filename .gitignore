@@ -1,0 +1,24 @@
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual envs
+venv/
+.venv/
+
+# MLflow local backend files (tracked via DVC/registry instead)
+mlruns/
+mlflow.db
+
+# NOTE: data/ and models/ contents are versioned by DVC (see dvc.yaml).
+# `dvc repro` auto-generates .gitignore entries inside data/ and models/
+# for the specific tracked outputs, so we don't hardcode them here.
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Docker
+*.log
